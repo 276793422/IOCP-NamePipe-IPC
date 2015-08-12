@@ -2,6 +2,10 @@
 #include <process.h>
 #include "IOCPNamePipe.h"
 
+#ifdef _DEBUG
+#include "TestList.h"
+#endif
+
 #define BUFSIZE	0x1000	//	4096
 
 CIOCPNamePipe::CIOCPNamePipe(void)
@@ -598,6 +602,10 @@ DWORD CIOCPNamePipeServer::Close()
 	}
 	m_wsName[0] = L'\0';
 	m_dwStatus = NAME_PIPE_STATUS_STOPPING;
+
+#ifdef _DEBUG
+	DEBUG_printf();
+#endif
 	return 0;
 }
 
@@ -858,6 +866,10 @@ DWORD CIOCPNamePipeClient::Close()
 		if ( m_hRecvThread )
 		{
 			SetEvent(m_pipeClient.oOverlap.hEvent);
+			if ( WAIT_OBJECT_0 != WaitForSingleObject(m_hRecvThread , 5*1000) )
+			{
+				TerminateThread(m_hRecvThread , -1);
+			}
 			m_hRecvThread = NULL;
 		}
 		CloseHandle(m_hPipe);
@@ -865,7 +877,13 @@ DWORD CIOCPNamePipeClient::Close()
 	}
 	m_wsName[0] = L'\0';
 
+	//	这里可加可不加，因为线程里面会给它赋值
+	//	线程里面赋值的好处是服务端主动退出之后，客户端还可以工作
 	//m_dwStatus = NAME_PIPE_STATUS_STOPPING;
+
+#ifdef _DEBUG
+	DEBUG_printf();
+#endif
 	return 0;
 }
 
